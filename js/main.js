@@ -11,6 +11,12 @@ window.addEventListener('load', () => {
     const token = localStorage.getItem('token');
     if (token)
       document.getElementById('token').value = token;
+    else {
+      const authToken = getQueryVariableFromUrl("authToken");
+      if (authToken) {
+        document.getElementById('token').value = authToken;
+      }
+    }
   } catch {}
 
   if (repo) {
@@ -18,7 +24,16 @@ window.addEventListener('load', () => {
     fetchData();
   }
 });
-
+function getQueryVariableFromUrl(variable)
+{
+  let queryVarArray = window.location.search.substring(1).split("&");
+  for (let queryVar of queryVarArray) {
+    let kvp = queryVar.split("=");
+    if (kvp[0] == variable)
+      return kvp[1];
+  }
+  return null;
+}
 document.getElementById('form').addEventListener('submit', e => {
   e.preventDefault();
   fetchData();
@@ -64,7 +79,7 @@ function updateDT(data) {
   // Format dataset and redraw DataTable. Use second index for key name
   const forks = [];
   for (let fork of data) {
-    fork.repoLink = `<a href="https://github.com/${fork.full_name}">Link</a>`;
+    fork.repoLink = `<a href="https://github.com/${fork.full_name}" target="_blank" rel="noopener noreferrer">Link</a>`;
     fork.ownerName = fork.owner.login;
     forks.push(fork);
   }
@@ -142,7 +157,7 @@ function initDT() {
 async function fetchAndShow(repo) {
   repo = repo.replace('https://github.com/', '');
   repo = repo.replace('http://github.com/', '');
-  repo = repo.replace('.git', '');
+  repo = repo.replace(/\.git$/, '');
 
   const token = document.getElementById('token').value;
   localStorage.setItem('token', token);
@@ -189,7 +204,7 @@ async function fetchAndShow(repo) {
   }
 
   try {
-    updateDT(data);
+    updateDT(data, repo);;
   } catch (error) {
     console.error(error);
   }
@@ -282,10 +297,12 @@ async function fetchMoreDir(repo, originalBranch, fork, fromOriginal, api) {
   });
   const data = await api.fetch(url, limiter);
 
-  if (fromOriginal)
-    fork.diff_from_original = printInfo('-', data, fork);
-  else
-    fork.diff_to_original = printInfo('+', data, fork);
+  if (data !== null) {
+    if (fromOriginal)
+      fork.diff_from_original = printInfo('-', data, fork);
+    else
+      fork.diff_to_original = printInfo('+', data, fork);
+  }
 }
 
 function printInfo(sep, data, fork) {
@@ -352,7 +369,10 @@ function Api(token) {
         authorization: "token " + token
       }
     }
-    : undefined;
+    : {
+      headers: {
+      }
+    };
 
   const rate = {
     remaining: '?',
@@ -368,6 +388,8 @@ function Api(token) {
       const response = await fetch(url, newConfig);
       if (response.status === 304)
         return cached.data;
+      if (response.status === 404)
+        return null;
       if (!response.ok)
         throw Error(response.statusText);
 
