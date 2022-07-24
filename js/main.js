@@ -28,7 +28,7 @@ function getQueryVariableFromUrl(variable) {
   let queryVarArray = window.location.search.substring(1).split('&');
   for (let queryVar of queryVarArray) {
     let kvp = queryVar.split('=');
-    if (kvp[0] === variable) return kvp[1];
+    if (kvp[0] === variable) return kvp[1].replace('/',"");
   }
   return null;
 }
@@ -89,7 +89,7 @@ function updateDT(data) {
   // Format dataset and redraw DataTable. Use second index for key name
   const forks = [];
   for (let fork of data) {
-    fork.repoLink = `<a href="https://github.com/${fork.full_name}" target="_blank" rel="noopener noreferrer">Link</a>`;
+    fork.repoLink = `<a href="https://github.com/${fork.full_name}" target="_blank" rel="noopener noreferrer">${fork.full_name}</a>`;
     fork.ownerName = `<a href="https://github.com/${fork.owner.login}" target="_blank" rel="noopener noreferrer">${fork.owner.login}</a>`;
     fork.avatar = `<img src="${fork.owner.avatar_url}" alt="Avatar" class="avatar">`
     forks.push(fork);
@@ -120,7 +120,7 @@ function initDT() {
   ];
 
   // Sort by stars:
-  const sortColName = 'Diff Ahead';
+  const sortColName = 'Last Push';
   const sortColumnIdx = window.columnNamesMap
     .map((pair) => pair[0])
     .indexOf(sortColName);
@@ -579,7 +579,7 @@ function SimilarChecker(options) {
 
   return { apply, cache };
 }
-function humanFileSize(bytes, si = false, dp = 1) {
+function humanFileSize(bytes, si = true, dp = 1) {
   const thresh = si ? 1000 : 1024;
 
   if (Math.abs(bytes) < thresh) {
