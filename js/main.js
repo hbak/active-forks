@@ -169,10 +169,10 @@ async function fetchAndShow(repo) {
   const token = document.getElementById('token').value;
   localStorage.setItem('token', token);
   const api = Api(token);
+  const { maxRecords, ignoreUnchangedForks } = Options.getAndSave();
 
-  const data = [];
+  let data = [];
   try {
-    const maxRecords = Options.getAndSave().maxRecords;
 
     const singleLimiter = (fork) => ({
       full_name: fork.full_name,
@@ -195,6 +195,7 @@ async function fetchAndShow(repo) {
       `https://api.github.com/repos/${repo}`,
       singleLimiter
     );
+
     originalRepo.diff_from_original = originalRepo.diff_to_original = '0';
     const originalBranch = originalRepo.default_branch;
     data.push(originalRepo);
@@ -202,19 +203,28 @@ async function fetchAndShow(repo) {
     let page = 1;
     while (data.length - 1 < maxRecords) {
       const url = `https://api.github.com/repos/${repo}/forks?sort=stargazers&per_page=${maxRecords}&page=${page}`;
-      const someData = await api.fetch(url, multiLimiter);
+      let someData = await api.fetch(url, multiLimiter);
 
       if (someData.length === 0) break;
+      if (ignoreUnchangedForks === true) {
+        someData = someData.filter(fork => {
+          return fork.pushed_at !== originalRepo.pushed_at
+        });
+      }
       data.push(...someData);
       ++page;
     }
-
     await updateData(repo, originalBranch, data.slice(1), api);
   } catch (error) {
     console.error(error);
   }
-
   try {
+    if (ignoreUnchangedForks === true) {
+      data = data.filter(fork => {
+        return fork.diff_to_original !== '0'
+      });
+    }
+    data = data.filter(fork => (fork.exists !== false));
     updateDT(data, repo);
   } catch (error) {
     console.error(error);
@@ -307,12 +317,16 @@ async function fetchMoreDir(repo, originalBranch, fork, fromOriginal, api) {
       },
     })),
   });
+  
   const data = await api.fetch(url, limiter);
 
   if (data !== null) {
     if (fromOriginal) fork.diff_from_original = printInfo('-', data, fork);
     else fork.diff_to_original = printInfo('+', data, fork);
+  } else {
+    fork.exists = false
   }
+
 }
 
 function printInfo(sep, data, fork) {
@@ -522,11 +536,13 @@ const Options = {
         sameSize: true,
         samePushDate: true,
         maxRecords: 100,
+        ignoreUnchangedForks: true,
       };
 
       $('#sameSize').attr('checked', saved.sameSize);
       $('#samePushDate').attr('checked', saved.samePushDate);
       $('#maxRecords').val(saved.maxRecords);
+      $('#ignoreUnchangedForks').attr('checked', saved.ignoreUnchangedForks);
     } catch {}
   },
 
@@ -534,8 +550,9 @@ const Options = {
     const sameSize = $('#sameSize').is(':checked');
     const samePushDate = $('#samePushDate').is(':checked');
     const maxRecords = $('#maxRecords').val();
+    const ignoreUnchangedForks = $('#ignoreUnchangedForks').is(':checked');
 
-    const val = { sameSize, samePushDate, maxRecords };
+    const val = { sameSize, samePushDate, maxRecords, ignoreUnchangedForks };
     try {
       localStorage.setItem('options', JSON.stringify(val));
     } catch {}

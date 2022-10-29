@@ -19,13 +19,14 @@
 </head>
 
 <body>
-    <div class="container">
+		<div class="container">
+    <!-- <div> -->
         <div class="row">
             <div class="col-sm-12 col-lg-12">
                 <div class="card">
                     <div class="card-header text-center">
                         <h3>
-                            <a href="https://github.com/DTS-And-Eaglepoint-Funding/active-forks" class="black">
+                            <a href="https://github.com/hbak/active-forks" class="black">
                                 <i class="fa fa-github-alt pull-left" aria-hidden="true"></i>
                             </a>
                             Active GitHub Forks
@@ -37,7 +38,7 @@
                           <form id="form" role="form">
 
                               <div class="input-group">
-                                  <label for="q"></label><input id="q" name="q" class="form-control" type="text" placeholder="techgaun/active-forks">
+                                  <label for="q"></label><input id="q" name="q" class="form-control" type="text" placeholder="ridvanaltun/active-forks">
                                   <span class="input-group-btn">
                                       <button id="find" onClick="fetchData()" type="button" class="btn btn-primary">
                                           <i id="spinner" class="fa fa-spinner fa-pulse fa-fw d-none"></i>
@@ -66,6 +67,9 @@
 
                                     <label for="maxRecords">Max records:</label>
                                     <input id="maxRecords" name="maxRecords" class="form-control ml-3 mr-5" type="number" min="10">
+
+																		<input id="ignoreUnchangedForks" class="form-check-input" type="checkbox">
+																		<label for="ignoreUnchangedForks" class="form-check-label mr-5">Ignore Unchanged Forks</label>
 
                                     <label>Assume same commits if:</label>
 
